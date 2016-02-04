@@ -27,6 +27,19 @@ class StoreSpecs: QuickSpec {
 
         }
 
+        describe("#deinit") {
+
+            it("Deinitializes when no reference is held") {
+                autoreleasepool {
+                    let reducer = TestReducer()
+                    let _ = DeInitStore(reducer: reducer, state: TestAppState())
+                }
+
+                expect(deInitCount).to(equal(1))
+            }
+
+        }
+
         describe("#subscribe") {
 
             var store: Store<TestAppState>!
@@ -196,6 +209,26 @@ class DispatchingReducer: Reducer {
         expect(self.store?.dispatch(SetValueAction(20))).to(raiseException(named:
             "SwiftFlow:IllegalDispatchFromReducer"))
         return state ?? TestAppState()
+    }
+}
+
+/*
+    Used for deinit test. Needs to be top level because generic class cannot close over variables
+    in outer scope.
+*/
+var deInitCount = 0
+
+class DeInitStore<State: StateType>: Store<State> {
+    deinit {
+        ++deInitCount
+    }
+
+    required convenience init(reducer: AnyReducer, state: State?) {
+        self.init(reducer: reducer, state: state, middleware: [])
+    }
+
+    required init(reducer: AnyReducer, state: State?, middleware: [Middleware]) {
+        super.init(reducer: reducer, state: state, middleware: middleware)
     }
 }
 
